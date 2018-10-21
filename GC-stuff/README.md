@@ -27,3 +27,5 @@ sudo chmod 777 ./ext
 
 **Note**: To go root anytime, type sudo -s.
 
+### TO-DOs
+- [ ] - Add shutdown jupyter and sound notification
