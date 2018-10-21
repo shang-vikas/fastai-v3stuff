@@ -6,8 +6,8 @@
 
 ## Steps
 1. git clone https://github.com/shang-vikas/fastai-v3stuff
-2. cd fastai-v3stuff/gstuff
-3. cat commands.sh >> ~/.bashrc && source ~/.bashrc ##this will add necessary shorter version of gcloud commands
+2. cd fastai-v3stuff/GC-stuff
+3. cat commands >> ~/.bashrc && source ~/.bashrc ##this will add necessary shorter version of gcloud commands
 4. chmod +x ./script.sh  ##make the script executable
 5. sudo ./script.sh  ## run the script
 
