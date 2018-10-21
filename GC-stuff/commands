@@ -1,11 +1,18 @@
 
+## some taken from https://github.com/OwnInfrastructure/configs/blob/master/gcloud.sh
 ## Functions added by GC-stuff repo ##
+
+
 function GSTOP() {
 	gcloud compute instances stop $1
 }
 
 function GSTART() {
 	gcloud compute instances start $1
+}
+
+function GDEL() {
+	gcloud compute instances delete $1
 }
 
 function GSSH() {
@@ -24,7 +31,7 @@ function GDESC() {
 	gcloud compute instances describe $1
 }
 
-function GPJS() {
+function GPJL() {
 	gcloud projects list
 }
 
@@ -37,6 +44,9 @@ function GDSKD() {
 	gcloud compute disks delete $@
 }
 
+function GDSKL() {
+	gcloud compute disks list
+}
 
 function set_zone() {
 	gcloud config set compute/zone $1

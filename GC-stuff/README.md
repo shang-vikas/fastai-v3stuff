@@ -20,4 +20,10 @@ So when you spin off another gpu-instance just dont create a new-disk, attach th
 6. GSSH <YOUR_INSTANCE_NAME_THAT_YOU_JUST_CREATED> <br>
 7. Open your favorite browser and type 127.0.0.1:8080 and here's your notebook. <br>
 
+**Additional steps to make life easier**
+Run following commands in either notebook or terminal.
+sudo ln -s /ext /home/jupyter
+sudo chmod 777 ./ext
+
+**Note**: To go root anytime, type sudo -s.
 
