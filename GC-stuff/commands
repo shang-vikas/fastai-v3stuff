@@ -1,0 +1,53 @@
+
+## Functions added by GC-stuff repo ##
+function GSTOP() {
+	gcloud compute instances stop $1
+}
+
+function GSTART() {
+	gcloud compute instances start $1
+}
+
+function GSSH() {
+	gcloud compute ssh $1 -- -L 8080:127.0.0.1:8080
+}
+
+function GSSHS() {
+	gcloud compute ssh $1 -- -L $2:127.0.0.1:$3
+}
+
+function GINSL() {
+	gcloud compute instances list
+}
+
+function GDESC() {
+	gcloud compute instances describe $1
+}
+
+function GPJS() {
+	gcloud projects list
+}
+
+
+function GDSKC() {
+	gcloud compute disks create $@
+}
+
+function GDSKD() {
+	gcloud compute disks delete $@
+}
+
+
+function set_zone() {
+	gcloud config set compute/zone $1
+}
+
+function set_region() {
+	gcloud config set compute/region $1
+}
+
+function set_project() {
+	gcloud config set project $1
+}
+
+## ends here ##
