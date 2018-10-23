@@ -4,15 +4,15 @@
 
 
 function GSTOP() {
-	gcloud compute instances stop $1
+	gcloud compute instances stop $@
 }
 
 function GSTART() {
-	gcloud compute instances start $1
+	gcloud compute instances start $@
 }
 
 function GDEL() {
-	gcloud compute instances delete $1
+	gcloud compute instances delete $@
 }
 
 function GSSH() {
