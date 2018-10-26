@@ -39,4 +39,4 @@ Anytime you get an [255] error, Just reset your machine. Then try doing GSSH. It
 ### TO-DOs
 - [ ] - Add jupyter-widget and sound notification during shutdown-signal
 ## How to contribute
-Just create a pull request, file an issue if you find any or for suggestions. For any queries contact me at 16vikas96@gmail.com
+Just create a pull request, file an issue if you find any or for suggestions :bowtie: For any queries contact me at 16vikas96@gmail.com
