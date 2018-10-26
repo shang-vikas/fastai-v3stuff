@@ -1,5 +1,10 @@
 # A command-line guide to setup preemptible GPUs with fastai1.0 library
 
+## Why this setup??
+For Beginners - To let them focus more on training and experimenting with the models rather than spending most of the time on installation errors.<br>
+For experts - One liner commands to launch the gpu and cpu instance,also one liners to quickly switch between cpu and gpu.Other benefits would be aliases added to the .bashrc files for quick lookups like GINSL, GDSKL ,GSTOP, GSTART etc.<br>
+
+
 ## Prerequisites
 1. A GCP account with valid billing details.
 2. Quota of alteast 1 GPU alloted.
@@ -27,7 +32,9 @@ Run `gswh_tocpu $cpu_instance_name` # This will stop the current gpu_instance, d
 Run `gswh_togpu $gpu_instance_name` # This will stop the current cpu_instance, detach the external disk and attach that to gpu_instance_name given. Note that if $gpu_instance_name is not found, the system will automatically create a gpu instance with default settings(n1-highmem-8,k80-1).
 
 
-**Note**: To go root anytime, type `sudo -s`.
+**Note**: 
+To go root anytime, type `sudo -s`.<br>
+Anytime you get an [255] error, Just reset your machine. Then try doing GSSH. It would be successful.<br>
 
 ### TO-DOs
 - [ ] - Add jupyter-widget and sound notification during shutdown-signal
