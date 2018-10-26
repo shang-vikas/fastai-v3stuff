@@ -1,0 +1,248 @@
+#! /bin/bash -i
+
+echo "cat ./commands>> ~/.bashrc"
+source ~/.bashrc
+
+# Expand aliases defined in the shell ~/.bashrc
+shopt -s expand_aliases
+
+if [ "$EUID" -ne 0 ];then
+	echo "Please run with root privileges"
+	exit
+fi
+
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# variables
+script=""
+script1=./starter-1.sh
+script2=./starter-2.sh
+externaldisk=""
+disksize=""
+attachdisk=""
+
+## helper functions
+function createdisk {
+	echo -e "$GREEN Type in the name of disk $NC"
+	read externaldisk
+	echo -e "Type in the size of disk in GB, recommended=200. Note you can always increase the size later."
+	read disksize
+	echo -e "$GREEN Creating a new external disk.. $NC"
+	gcloud compute disks create $externaldisk --size $disksize --zone $zoneid
+}
+
+function check_package {
+	var=$(which $1)
+	if [ "$var" != "" ];then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function cElement {
+	  local e match="$1"
+	    shift
+	      for e; do [[ "$e" == "$match" ]] && return 0; done
+	        return 1
+}
+lst=('yes' 'Yes' 'YES' 'No' 'no' 'NO')
+function authenticate {
+	while true;do
+		echo -ne "$GREEN Do you want to authenticate your GCP account? This is for first timers or those who mess up their configuration file..\n >>>>(yes/no) $NC"
+		read response
+		cElement $response ${lst[@]:0:3}
+		cyes=$?
+		cElement $response ${lst[@]:3}
+		cno=$?
+		if [ "$cyes" = "0" ] ;then
+			echo -e "$GREEN Now please authenticate your GCP user account and choose reinitialize default config ,then choose us-west1-b(11 number) in region when asked $NC"
+			echo -e "$GREEN Hit enter to continue..... $NC"
+			read tmp
+			gcloud init
+			break
+		elif [ "$cno" = "0" ];then
+			break
+		fi
+	done
+}
+
+function makeimage {
+	imagenm="fastai-v3-$RANDOM"
+	echo -e "$GREEN creating the custom-image from disk for future $NC"
+	echo -e "$YELLOW Note:$NC Custom image creation might take from 5 to 10 minutes. Meanwhile you can ssh into your system via GSSH jupyter@$imagenm and start running jupyter notebooks at 127.0.0.1:8080. Don't close this terminal."
+	gcloud compute images create $imagenm --source-disk=$iname
+}
+
+function tossh {
+	GSSH "jupyter@$iname"
+}
+
+function difftimestamp {
+	t1=$(date "+%s" --date="$1") #attach time
+	t2=$(date "+%s" --date="$2") #detach time
+	diff=$(( $t1 - $t2 ))
+	if [[ $diff -gt 0 ]];then #attached
+		echo "1"
+	else
+		echo "0"
+	fi
+}
+
+
+function makeinstance {
+	imagel=$(gcloud compute images list|grep fastai|awk '{print $1}')
+	if [ "$imagel" = "" ]; then
+		echo -e "$GREEN no custom-saved-image found, will pull the marketplace image.This will take some time. $NC"
+		## create new image from marketplace
+		imgfam="--image-family=pytorch-1-0-cu92-experimental"
+		imgpj="deeplearning-platform-release"
+		getgpu "$imgfam" $imgpj 1
+		makeimage
+		# tossh
+
+	else
+		echo -e "$GREEN saved-image found. using $imagel as boot image... $NC"
+		imgfam="--image=$imagel"
+		imgpj=$(gcloud config list|grep project|awk '{print $NF}')
+		getgpu "$imgfam" $imgpj 0
+		# tossh
+	fi
+}
+
+function readinput {
+	read iname cores ram typegpu countt
+	if [ "$#" = "0" ];then
+		iname="my-fastai-gpu-$RANDOM"
+		cores="8"
+		ram="16"
+		typegpu="k80"
+		countt="1"
+	fi
+}
+
+function getgpu {
+	# echo attahdisk is $attachdisk
+	if [ "$attachdisk" = "0" ];then
+		extargs=""
+	else
+		extargs=" --metadata-from-file=startup-script="$script" --disk=name=$externaldisk,device-name=$externaldisk,mode=rw,boot=no"
+	fi
+
+	if [ "$3" = "1" ];then
+		nvdargs=' --metadata=install-nvidia-driver=True'
+	else
+		nvdargs=""
+	fi
+
+	echo argss are $extargs $nvdargs
+	gcloud beta compute --project=$projectid instances create $iname --zone=$zoneid --machine-type=custom-$cores-$(($ram*1024)) --subnet=default --network-tier=PREMIUM  --no-restart-on-failure --maintenance-policy=TERMINATE --preemptible --service-account=$accountid --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --accelerator=type=nvidia-tesla-$typegpu,count=$countt --tags=http-server,https-server $1 --image-project=$2 --boot-disk-size=60GB --boot-disk-type=pd-standard --boot-disk-device-name=$iname $extargs $nvdargs
+
+}
+
+## script start from here
+
+echo -e "$GREEN This process will setup the preemptible gpu instance with the necessary fastai v1 library and pytorch 1.0dev.......... $NC"
+
+echo -e "$GREEN Checking pip3 and gcloud..... $NC"
+tmp=$(check_package pip3)
+if [ "$tmp" = "1" ]; then
+	apt install python3-pip --yes
+fi
+tmp=$(check_package gcloud)
+if [ "$tmp" = "1" ]; then
+	pip3 install gcloud --user
+fi
+
+authenticate
+
+zoneid=$(gcloud config list|grep zone|awk 'NF>1{print $NF}')
+projectid=$(gcloud config list|grep project|awk 'NF>1{print $NF}')
+
+insdisks=($(GINSL | grep -v NAME|awk '{print $1;}'|tr "\n" " "))
+echo ${insdisks[@]}
+disks=($(gcloud compute disks list|grep -v NAME|awk '{print $1;}'))
+for i in "${insdisks[@]}";do
+	disks=(${disks[@]//*$i*})
+done
+
+diskcnt=${#disks[@]}
+echo -e "$GREEN $(($diskcnt)) disks found $NC"
+
+
+
+if [ $diskcnt -ne 0 ]; then
+	echo -e "$GREEN Choose from existing disks or enter 0 to create new one or enter -1 to skip attaching external disk. $NC"
+	printf "$(echo ${disks[@]}|tr " " "\n"|awk '{print"[" NR "]" ":" $0 "\\n"}')"
+	while true;do
+		read labelno
+		if [ "$labelno" = "" ] || [ $labelno -lt -1 ];then
+			:
+		elif [ $labelno -gt $diskcnt ];then
+			echo -e "$GREEN wrong number chosen.exiting..\n enter again $NC"
+		elif [ $labelno -eq 0 ];then
+			createdisk
+			script=$script2
+			break
+		elif [ $labelno -eq -1 ];then
+			attachdisk=0
+			break
+		else
+			externaldisk=${disks[($labelno - 1)]}
+			# echo $externaldisk
+			grepd="$(gcloud compute disks describe $externaldisk|egrep '*tachTimestamp*|instances')"
+			timestamps=($(printf "$grepd"|egrep "*Timestamp*"|awk 'NF>1{print substr($NF,2,length($NF)-12)}'))
+			# printf "$grepd"
+			# echo ${timestamps[@]}
+			# read
+			if [ "${#timestamps[@]}" = "1" ]; then #detach the disk
+				ains=$(printf "$grepd"|egrep instances|tr "/" "\n"|tail -n 1)
+				echo -e "The disk is attached to $ains. Enter 0 to detach or 1 go back to previous menu."
+				read resp
+				if [ "$resp" = "0" ];then
+					gcloud compute instances detach-disk $ains --disk $externaldisk
+					script=$script1
+					break
+				else
+					echo -e "$GREEN choose from above options $NC"
+				fi
+			else
+				tmpvar=$(difftimestamp ${timestamps[0]} ${timestamps[1]})
+				# echo this is retur statment $tmpvar
+				if [ "$tmpvar" = "0" ]; then #detached state
+					script=$script1
+					break
+				else
+					ains=$(printf "$grepd"|egrep instances|tr "/" "\n"|tail -n 1)
+					echo -e "The disk is attached to $ains.... Enter 0 to detach or 1 to select other disk"
+					read resp
+					if [ "$resp" = "0" ];then
+						ains=$(printf "$grepd"|egrep instances|tr "/" "\n"|tail -n 1)
+						gcloud compute instances detach-disk $ains --disk $externaldisk
+						script=$script1
+						break
+					else
+						echo -e "$GREEN choose from above options $NC"
+					fi
+				fi
+			fi
+		fi
+	done
+else
+	createdisk
+	script=$script2
+fi
+
+
+echo -e $GREEN using defaults for zone= $zoneid and project= $projectid $NC
+#time to create gpu_instance preemptible
+accountid=$(gcloud iam service-accounts list |grep "Compute Engine"|awk 'NF>1{print $NF}')
+printf $GREEN Enter the name of the instance,num-of-cores,ram-size(GB),type-of-gpu(k80,p100,v100),count(1,2,4) or Enter to use defaults \n example:gpu-ins 4 16 k80 1 \n
+Defaults: my-fastai-gpu 8 16 k80 1 $NC
+
+readinput
+
+echo -e "$GREEN Sit back and relax, This may take a while.. You can monitor the progress on Google cloud console $NC"
+
+makeinstance

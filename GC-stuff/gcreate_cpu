@@ -1,0 +1,39 @@
+#! /bin/bash
+
+if [ "$EUID" -ne 0 ];then
+	echo "Please run with root privileges"
+	exit
+fi
+
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+## helper functions
+function createdisk {
+	echo -e "$GREEN creating a new external disk.. Type in the name of disks $NC"
+	read externaldisk
+	echo -e "Type in the size of disk in GB, recommended=200. Note you can always increase the size later."
+	read disksize
+	gcloud compute disks create $externaldisk --size $disksize --zone $zoneid
+}
+
+function makeinstance {
+	imagel=$(gcloud compute images list|grep fastai|awk '{print $1}')
+	if [ "$imagel" = "" ]; then
+		echo $GREEN no custom-image found, will pull the marketplace image.This will take some time. $NC
+		## create new image from marketplace
+		imgfam="pytorch-1-0-cu92-experimental"
+		imgpj="deeplearning-platform-release"
+		getgpu $imgfam $imgpj
+
+	else
+		echo $GREEN saved-image found. using $imagel to as boot image... $NC
+		imgfam=$imagel
+		imgpj=$(gcloud config list|grep project|awk '{print $NF}')
+		getgpu $imgfam $imgpj
+	fi
+}
+
+function readinput {
+	read iname cores ram typegpu countt
+}
