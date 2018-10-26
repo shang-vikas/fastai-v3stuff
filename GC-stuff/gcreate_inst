@@ -1,9 +1,14 @@
 #! /bin/bash
 
+
 if [ "$EUID" -ne 0 ];then
 	echo "Please run with root privileges"
 	exit
 fi
+
+## Change the below details to change your default values
+defaults=("my-fastai-cpu-$RANDOM" "8" "16" "k80" "1")
+zone="" #Change default zone here
 
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -22,7 +27,7 @@ function makeinstance {
 	if [ "$imagel" = "" ]; then
 		echo $GREEN no custom-image found, will pull the marketplace image.This will take some time. $NC
 		## create new image from marketplace
-		imgfam="pytorch-1-0-cu92-experimental"
+		imgfam="pytorch-1-0-cpu-experimental"
 		imgpj="deeplearning-platform-release"
 		getgpu $imgfam $imgpj
 
@@ -36,4 +41,13 @@ function makeinstance {
 
 function readinput {
 	read iname cores ram typegpu countt
+	if [ "$#" == '0'];then
+		iname=${defaults[0]}
+		cores=${defaults[1]}
+		ram=${defaults[2]}
+		typegpu=${defaults[3]}
+		countt=${defaults[4]}
 }
+
+
+readinput
