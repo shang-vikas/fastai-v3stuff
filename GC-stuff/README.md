@@ -23,7 +23,7 @@ So when you spin off another gpu-instance/cpu-instance just dont create a new ex
 Just run `gcreate_cpu/gcreate_gpu`.
 
 ## Steps to switch between cpu and gpu.
-Run `gswh_tocpu $cpu_instance_name` # This will stop the current gpu_instance, detach the external disk and attach that to cpu_instance_name given. Note that id $cpu_instance_name is not found, the system will automatically create a cpu instance with default settings(n1-higmem-8).
+Run `gswh_tocpu $cpu_instance_name` # This will stop the current gpu_instance, detach the external disk and attach that to cpu_instance_name given. Note that id $cpu_instance_name is not found, the system will automatically create a cpu instance with default settings(n1-higmem-8).<br>
 Run `gswh_togpu $gpu_instance_name` # This will stop the current cpu_instance, detach the external disk and attach that to gpu_instance_name given. Note that if $gpu_instance_name is not found, the system will automatically create a gpu instance with default settings(n1-highmem-8,k80-1).
 
 
