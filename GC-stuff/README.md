@@ -12,8 +12,8 @@ For experts - One liner commands to launch the gpu and cpu instance,also one lin
 ## Steps for first-time
 1. `git clone https://github.com/shang-vikas/fastai-v3stuff`
 2. `cd fastai-v3stuff/GC-stuff`
-3. `chmod +x ./run_this_first_time`  ##make the script executable
-4. `sudo ./run_this_first_time`  ## run the script
+3. `chmod +x ./run_this_first_time`   
+4. `sudo ./run_this_first_time`   
 
 After following the steps in script, you will have a gpu-instance with pre-installed fastai-library and its dependencies.An external disk would be attached to your instance at /ext if you opted for that.
 The fastai-v3 course files will be present in tutorials/fastai. I recommend you move them to ext. Your data will be safe for both external and internal storage in case the instances stops.Just make sure you save your notebooks at regular intervals.
@@ -38,3 +38,5 @@ Anytime you get an [255] error, Just reset your machine. Then try doing GSSH. It
 
 ### TO-DOs
 - [ ] - Add jupyter-widget and sound notification during shutdown-signal
+## How to contribute
+Just create a pull request, file an issue if you find any or for suggestions :bowtie: For any queries contact me at 16vikas96@gmail.com
