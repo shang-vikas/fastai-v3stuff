@@ -1,4 +1,4 @@
-# A command-line guide to setup preemptible GPUs with fastai1.0 library
+# A command-line guide to setup preemptible GPUs/CPus with pre-installed fastai1.0.12 and Pytorch1.0-dev libraries
 
 ## Why this setup??
 For Beginners - To let them focus more on training and experimenting with the models rather than spending most of the time on installation errors.<br>
