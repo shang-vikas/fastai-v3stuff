@@ -10,8 +10,9 @@ For experts - One liner commands to launch the gpu and cpu instance,also one lin
 2. Quota of alteast 1 GPU alloted.
 
 ## Steps for first-time
-1. `git clone https://github.com/shang-vikas/fastai-v3stuff`
-2. `cd fastai-v3stuff/GC-stuff`
+1. `sudo apt install subversion`
+1. `sudo svn export https://github.com/shang-vikas/fastai-v3stuff/trunk/GC-stuff`
+2. `cd GC-stuff`
 3. `chmod +x ./run_this_first_time`   
 4. `sudo ./run_this_first_time`   
 
