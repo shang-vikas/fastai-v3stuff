@@ -1,6 +1,6 @@
 
 ## some taken from https://github.com/OwnInfrastructure/configs/blob/master/gcloud.sh
-## Functions added by GC-stuff repo ##
+## Functions added by GC-stuff repo
 
 
 function GSTOP() {
@@ -11,9 +11,6 @@ function GSTART() {
 	gcloud compute instances start $@
 }
 
-function GDEL() {
-	gcloud compute instances delete $@
-}
 
 function GSSH() {
 	gcloud compute ssh $1 -- -L 8080:127.0.0.1:8080
@@ -27,12 +24,20 @@ function GINSL() {
 	gcloud compute instances list
 }
 
-function GDESC() {
+function GPRJL() {
+	gcloud projects list
+}
+
+function GDSKL() {
+	gcloud compute disks list
+}
+
+function GIDES() {
 	gcloud compute instances describe $1
 }
 
-function GPJL() {
-	gcloud projects list
+function GDDES {
+	gcloud compute disks describe $1
 }
 
 
@@ -44,8 +49,8 @@ function GDSKD() {
 	gcloud compute disks delete $@
 }
 
-function GDSKL() {
-	gcloud compute disks list
+function GDEL() {
+	gcloud compute instances delete $@
 }
 
 function set_zone() {
@@ -60,4 +65,4 @@ function set_project() {
 	gcloud config set project $1
 }
 
-## ends here ##
+## ends here

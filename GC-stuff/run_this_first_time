@@ -1,19 +1,27 @@
 #! /bin/bash -i
 
-echo "cat ./commands>> ~/.bashrc"
-source ~/.bashrc
-
-# Expand aliases defined in the shell ~/.bashrc
-shopt -s expand_aliases
 
 if [ "$EUID" -ne 0 ];then
 	echo "Please run with root privileges"
 	exit
 fi
 
+
+comm=$(cat ~/.bashrc|grep GC-stuff)
+if [ "$comm" = ""];then
+	cat ./commands >> ~/.bashrc
+	source ~/.bashrc
+else
+	:
+fi
+
+# Expand aliases defined in the shell ~/.bashrc
+shopt -s expand_aliases
+
+
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
-
+YELLOW="\e[93m"
 # variables
 script=""
 script1=./starter-1.sh
@@ -69,14 +77,18 @@ function authenticate {
 }
 
 function makeimage {
+	gcloud compute config-ssh
 	imagenm="fastai-v3-$RANDOM"
-	echo -e "$GREEN creating the custom-image from disk for future $NC"
-	echo -e "$YELLOW Note:$NC Custom image creation might take from 5 to 10 minutes. Meanwhile you can ssh into your system via GSSH jupyter@$imagenm and start running jupyter notebooks at 127.0.0.1:8080. Don't close this terminal."
-	gcloud compute images create $imagenm --source-disk=$iname
+	echo -e "$GREEN""creating the custom-image from disk for future $NC"
+	echo -e "$YELLOW""NOTE:$NC The whole process might take 10-15 minutes.Meanwhile don't close this window.\nYou can ssh into instance by GSSH jupyter@${details[0]}"
+	gcloud compute snapshots ${details[0]} --snapshot-names="snap-32"
+	gcloud compute images create $imagenm --source-snapshot="snap-32"
+	echo -e "Image creation done.\n"
+	echo -e "All done!!"
 }
 
 function tossh {
-	GSSH "jupyter@$iname"
+	GSSH "jupyter@${details[0]}"
 }
 
 function difftimestamp {
@@ -98,27 +110,28 @@ function makeinstance {
 		## create new image from marketplace
 		imgfam="--image-family=pytorch-1-0-cu92-experimental"
 		imgpj="deeplearning-platform-release"
-		getgpu "$imgfam" $imgpj 1
+		getgpu "$imgfam" "$imgpj" 1
 		makeimage
 		# tossh
 
 	else
 		echo -e "$GREEN saved-image found. using $imagel as boot image... $NC"
 		imgfam="--image=$imagel"
-		imgpj=$(gcloud config list|grep project|awk '{print $NF}')
+		imgpj=$(gcloud config list 2>/dev/null|grep project|awk '{print $NF}')
 		getgpu "$imgfam" $imgpj 0
 		# tossh
 	fi
 }
 
 function readinput {
-	read iname cores ram typegpu countt
-	if [ "$#" = "0" ];then
-		iname="my-fastai-gpu-$RANDOM"
-		cores="8"
-		ram="16"
-		typegpu="k80"
-		countt="1"
+	read -a details
+	if [ "${#details[@]}" = "0" ];then
+		# echo no args were there
+		details[0]="my-fastai-gpu-$(echo $RANDOM|cut -c 1-3)"
+		details[1]="8"
+		details[2]="16"
+		details[3]="k80"
+		details[4]="1"
 	fi
 }
 
@@ -136,8 +149,10 @@ function getgpu {
 		nvdargs=""
 	fi
 
-	echo argss are $extargs $nvdargs
-	gcloud beta compute --project=$projectid instances create $iname --zone=$zoneid --machine-type=custom-$cores-$(($ram*1024)) --subnet=default --network-tier=PREMIUM  --no-restart-on-failure --maintenance-policy=TERMINATE --preemptible --service-account=$accountid --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --accelerator=type=nvidia-tesla-$typegpu,count=$countt --tags=http-server,https-server $1 --image-project=$2 --boot-disk-size=60GB --boot-disk-type=pd-standard --boot-disk-device-name=$iname $extargs $nvdargs
+	# echo argss are $extargs $nvdargs
+	# echo ${details[@]}
+	gcloud beta compute --project=$projectid instances create ${details[0]} --zone=$zoneid --machine-type=custom-${details[1]}-$((${details[2]}*1024)) --subnet=default --network-tier=PREMIUM  --no-restart-on-failure --maintenance-policy=TERMINATE --preemptible --service-account=$accountid --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --accelerator=type=nvidia-tesla-${details[3]},count=${details[4]} --tags=http-server,https-server $1 --image-project=$2 --boot-disk-size=60GB --boot-disk-type=pd-standard --boot-disk-device-name=${details[0]} $extargs $nvdargs
+
 
 }
 
@@ -157,11 +172,11 @@ fi
 
 authenticate
 
-zoneid=$(gcloud config list|grep zone|awk 'NF>1{print $NF}')
-projectid=$(gcloud config list|grep project|awk 'NF>1{print $NF}')
+zoneid=$(gcloud config list 2>/dev/null|grep zone|awk 'NF>1{print $NF}')
+projectid=$(gcloud config list 2>/dev/null|grep project|awk 'NF>1{print $NF}')
 
 insdisks=($(GINSL | grep -v NAME|awk '{print $1;}'|tr "\n" " "))
-echo ${insdisks[@]}
+# echo ${insdisks[@]}
 disks=($(gcloud compute disks list|grep -v NAME|awk '{print $1;}'))
 for i in "${insdisks[@]}";do
 	disks=(${disks[@]//*$i*})
@@ -238,8 +253,7 @@ fi
 echo -e $GREEN using defaults for zone= $zoneid and project= $projectid $NC
 #time to create gpu_instance preemptible
 accountid=$(gcloud iam service-accounts list |grep "Compute Engine"|awk 'NF>1{print $NF}')
-printf $GREEN Enter the name of the instance,num-of-cores,ram-size(GB),type-of-gpu(k80,p100,v100),count(1,2,4) or Enter to use defaults \n example:gpu-ins 4 16 k80 1 \n
-Defaults: my-fastai-gpu 8 16 k80 1 $NC
+printf "$GREEN Type instance_name, cores, ram(GB), type-of-gpu(k80,p100,v100), count(1,2,4) or Enter to use defaults \nexample:gpu-ins 4 16 k80 1 \nDefaults: my-fastai-gpu 8 16 K80 1 $NC"
 
 readinput
 
