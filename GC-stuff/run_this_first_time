@@ -29,6 +29,7 @@ script2=./starter-2.sh
 externaldisk=""
 disksize=""
 attachdisk=""
+snapnm="snap-32"
 
 ## helper functions
 function createdisk {
@@ -76,15 +77,22 @@ function authenticate {
 	done
 }
 
+function removesnap {
+	gcloud compute snapshots delete $snapnm
+}
+
 function makeimage {
 	gcloud compute config-ssh
 	imagenm="fastai-v3-$RANDOM"
 	echo -e "$GREEN""creating the custom-image from disk for future $NC"
 	echo -e "$YELLOW""NOTE:$NC The whole process might take 10-15 minutes.Meanwhile don't close this window.\nYou can ssh into instance by GSSH jupyter@${details[0]}"
-	gcloud compute snapshots ${details[0]} --snapshot-names="snap-32"
-	gcloud compute images create $imagenm --source-snapshot="snap-32"
-	echo -e "Image creation done.\n"
-	echo -e "All done!!"
+	gcloud compute disks snapshot ${details[0]} --snapshot-names="$snapnm"
+	gcloud compute images create $imagenm --source-snapshot="$snapnm"
+	if [ "$?" = "0" ];then
+		echo -e "Image creation done.\n"
+	else
+		echo "Error creating the image."
+	fi
 }
 
 function tossh {
