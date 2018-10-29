@@ -77,8 +77,8 @@ function authenticate {
 	done
 }
 
-function removesnap {
-	gcloud compute snapshots delete $snapnm
+function tossh {
+	GSSH "jupyter@${details[0]}"
 }
 
 function makeimage {
@@ -88,6 +88,7 @@ function makeimage {
 	echo -e "$YELLOW""NOTE:$NC The whole process might take 10-15 minutes.Meanwhile don't close this window.\nYou can ssh into instance by GSSH jupyter@${details[0]}"
 	gcloud compute disks snapshot ${details[0]} --snapshot-names="$snapnm"
 	gcloud compute images create $imagenm --source-snapshot="$snapnm"
+	gcloud compute snapshots delete $snapnm
 	if [ "$?" = "0" ];then
 		echo -e "Image creation done.\n"
 	else
@@ -95,9 +96,6 @@ function makeimage {
 	fi
 }
 
-function tossh {
-	GSSH "jupyter@${details[0]}"
-}
 
 function difftimestamp {
 	t1=$(date "+%s" --date="$1") #attach time
